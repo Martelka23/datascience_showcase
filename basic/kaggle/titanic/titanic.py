@@ -36,7 +36,7 @@ test_df.loc[test_df['Age'].isna() == True, 'Age'] = test_df[test_df['Age'].isna(
 test_df['Age'] = preprocessing.scale(test_df['Age'])
 test_df['Age'] += 3
 
-test_df = test_df[test_df['Fare'].notna()]
+test_df['Fare'].fillna(test_df['Fare'].median())
 test_df['Fare'] = preprocessing.scale(test_df['Fare'])
 test_df['Fare'] += 1
 
@@ -65,7 +65,7 @@ def softmax(x):
     return x >= 0.5
 
 # Дополнительные переменные
-alpha, iterations, hidden_size = 0.01, 200, 10
+alpha, iterations, hidden_size = 0.01, 50, 10
 
 weights_0_1 = 0.2 * np.random.random((x_train.shape[1], hidden_size)) - 0.1
 weights_1_2 = 0.2 * np.random.random((hidden_size, 1)) - 0.1
@@ -100,21 +100,14 @@ for i in range(iterations):
     print(f'Error for all: {error_for_all:.8f}')
     print('-' * 70)
 
-error_for_all = 0
-right_answers = 0
-for inps, goal_pred in zip(x_test, y_test):
+answers = []
+for inps in x_test:
     layer_0 = np.array([inps], dtype=np.float)
     layer_1 = tanh(np.dot(layer_0, weights_0_1))
     layer_2 = np.dot(layer_1, weights_1_2)
     
-    goal_pred = np.array([[goal_pred]])
-
     layer_2 = softmax(layer_2)
-    right_answers += layer_2[0][0] == goal_pred[0][0]
-    error_for_all += np.sum((layer_2 - goal_pred) ** 2)
+    answers.append(int(layer_2[0][0]))
     
-    # print(f'| Prediction: {layer_2[0][0]: >15} | Goal prediction: {goal_pred[0][0]} |')
-    
-print(f'Accuracy: {right_answers/x_test.shape[0]*100: .2f}%')
-print(f'Error for all: {error_for_all:.8f}')
-print('-' * 70)
+answers_df = pd.DataFrame(data=zip(np.arange(892, 1310), answers), columns=['PassengerId','Survived'])
+answers_df.to_csv('./my_submission.csv', index=False)
